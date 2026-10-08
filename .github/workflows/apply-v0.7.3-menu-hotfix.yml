@@ -1,0 +1,77 @@
+name: Apply GitHub Plus v0.7.3 Menu Hotfix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/apply-v0.7.3-menu-hotfix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Apply exact v0.7.3 source patch
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('GitHub-Plus.user.js')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = [
+              (
+                  '// @version      0.7.2',
+                  '// @version      0.7.3',
+              ),
+              (
+                  '''                case "bool":\n                    return `${item.name}: ${value ? "✔" : "✘"}`;''',
+                  '''                case "bool":\n                    // Boolean state is rendered at the very start of the full menu caption\n                    // so narrow userscript-manager popups cannot clip the check mark.\n                    return item.name;''',
+              ),
+              (
+                  '''        _title(item, value) {''',
+                  '''        _menuStatePrefix(item, value) {\n            switch (item.type) {\n                case "bool":\n                    return value ? "✓ " : "○ ";\n                case "enum":\n                    return "↻ ";\n                case "action":\n                    return "▶ ";\n                default:\n                    return "";\n            }\n        }\n\n        _menuCategory(labels) {\n            if (!labels.length) return "";\n            const shortNames = {\n                "Release Features": "Release",\n                "Additional Features": "Additional",\n                "Advanced Settings": "Advanced",\n            };\n            return `${labels.map((label) => shortNames[label] ?? label).join(" › ")} › `;\n        }\n\n        _title(item, value) {''',
+              ),
+              (
+                  '''                const category = item.labels.length\n                    ? `${item.labels.join(" › ")} › `\n                    : "";\n                const caption = category + this._format(item, value);''',
+                  '''                const category = this._menuCategory(item.labels);\n                const caption =\n                    this._menuStatePrefix(item, value) +\n                    category +\n                    this._format(item, value);''',
+              ),
+          ]
+
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one match, found {count}: {old[:80]!r}')
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Verify exact source hash
+        shell: bash
+        run: echo "1d4021367c7ccf378b14a0f8898d4df68d0c92155699401628e7b6413b65b70e  GitHub-Plus.user.js" | sha256sum --check --strict
+
+      - name: Validate JavaScript syntax
+        run: node --check GitHub-Plus.user.js
+
+      - name: Update checksum
+        shell: bash
+        run: sha256sum GitHub-Plus.user.js > SHA256SUMS.txt
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: rm .github/workflows/apply-v0.7.3-menu-hotfix.yml
+
+      - name: Commit verified v0.7.3
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release GitHub Plus v0.7.3 menu visibility hotfix"
+          git push
