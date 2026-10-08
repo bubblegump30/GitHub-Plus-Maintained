@@ -5,8 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '.build/source.part*.b64'
-      - '.github/workflows/assemble-userscript.yml'
+      - '.build/READY'
 
 permissions:
   contents: write
