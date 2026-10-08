@@ -2,6 +2,27 @@
 
 All notable changes to this maintained fork are documented here.
 
+## [0.7.3] - 2026-10-08
+
+### Fixed
+
+- Fixed enabled/disabled check marks being clipped off in narrow Violentmonkey popup menus.
+- Moved boolean status indicators to the beginning of each userscript menu caption so they remain visible even when the label is truncated.
+- Shortened long menu category names to reduce horizontal clipping in Violentmonkey.
+
+### Changed
+
+- Boolean items now use `✓` for enabled and `○` for disabled at the start of the caption.
+- Enum items now use a leading `↻` indicator.
+- Action items now use a leading `▶` indicator.
+- Shortened menu groups: `Release Features` → `Release`, `Additional Features` → `Additional`, and `Advanced Settings` → `Advanced`.
+
+### Validation
+
+- Browser behavior confirmed improved by the maintainer in Violentmonkey.
+- Exact source SHA-256 verified before commit.
+- JavaScript syntax validation passed with `node --check`.
+
 ## [0.7.2] - 2026-10-08
 
 ### Fixed
