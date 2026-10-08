@@ -2,7 +2,7 @@
 // @name         GitHub Plus
 // @name:zh-CN   GitHub 增强
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
+// @version      0.7.3
 // @description  Enhance GitHub with additional features. Repaired build with self-contained dependencies and current GitHub compatibility fixes.
 // @description:zh-CN 为 GitHub 增加额外的功能。修复版，已移除失效的外部依赖。
 // @author       PRO-2684
@@ -705,7 +705,9 @@
         _format(item, value) {
             switch (item.type) {
                 case "bool":
-                    return `${item.name}: ${value ? "✔" : "✘"}`;
+                    // Boolean state is rendered at the very start of the full menu caption
+                    // so narrow userscript-manager popups cannot clip the check mark.
+                    return item.name;
                 case "enum":
                     return `${item.name}: ${item.options?.[value] ?? value}`;
                 case "action":
@@ -718,6 +720,29 @@
                 default:
                     return `${item.name}: ${value}`;
             }
+        }
+
+        _menuStatePrefix(item, value) {
+            switch (item.type) {
+                case "bool":
+                    return value ? "✓ " : "○ ";
+                case "enum":
+                    return "↻ ";
+                case "action":
+                    return "▶ ";
+                default:
+                    return "";
+            }
+        }
+
+        _menuCategory(labels) {
+            if (!labels.length) return "";
+            const shortNames = {
+                "Release Features": "Release",
+                "Additional Features": "Additional",
+                "Advanced Settings": "Advanced",
+            };
+            return `${labels.map((label) => shortNames[label] ?? label).join(" › ")} › `;
         }
 
         _title(item, value) {
@@ -746,10 +771,11 @@
 
             for (const [prop, item] of this.items) {
                 const value = this._read(prop);
-                const category = item.labels.length
-                    ? `${item.labels.join(" › ")} › `
-                    : "";
-                const caption = category + this._format(item, value);
+                const category = this._menuCategory(item.labels);
+                const caption =
+                    this._menuStatePrefix(item, value) +
+                    category +
+                    this._format(item, value);
                 const options = {
                     autoClose: false,
                     title: this._title(item, value),
