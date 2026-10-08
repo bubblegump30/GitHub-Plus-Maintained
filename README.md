@@ -6,13 +6,13 @@ The original userscript stopped working after its external GitHub-hosted depende
 
 ## Current release
 
-**v0.7.1 — Dependency Repair & Compatibility Fixes**
+**v0.7.2 — GitHub Loading Compatibility Hotfix**
 
 ### Why this fork exists
 
 The upstream v0.7.0 userscript depended on files hosted under the original author's GitHub account, including the configuration library and Catppuccin icon resources. When those resources became unavailable, Tampermonkey could no longer initialize the script reliably.
 
-v0.7.1 removes those runtime dependencies and replaces them with self-contained equivalents.
+v0.7.1 removed those runtime dependencies and replaced them with self-contained equivalents. v0.7.2 fixes a compatibility regression discovered on current GitHub repository pages.
 
 ## Features
 
@@ -32,6 +32,14 @@ v0.7.1 removes those runtime dependencies and replaces them with self-contained 
 - GitHub API rate-limit display
 - Optional GitHub personal access token support
 
+## v0.7.2 hotfix highlights
+
+- Fixed repository pages getting stuck with gray lazy-loading placeholders while GitHub Plus was enabled.
+- Removed the behavior that made GitHub's global `window.fetch` non-writable.
+- Preserved GitHub's native React/lazy-loading request pipeline.
+- Restricted release-asset processing to actual `/releases/expanded_assets/` fragments.
+- Verified the exact source with SHA-256 and `node --check` before commit.
+
 ## v0.7.1 repair highlights
 
 - Removed dead `@require` and `@resource` URLs tied to the unavailable upstream GitHub account.
@@ -45,9 +53,9 @@ v0.7.1 removes those runtime dependencies and replaces them with self-contained 
 ## Installation
 
 1. Install a userscript manager such as Tampermonkey.
-2. Open `GitHub-Plus.user.js` from this repository.
-3. Install the script when your userscript manager prompts you.
-4. Disable or remove the old GitHub Plus v0.7.0 copy to avoid two scripts modifying GitHub simultaneously.
+2. Open `GitHub-Plus.user.js` from this repository or the latest private Release.
+3. Install/update the script when your userscript manager prompts you.
+4. Disable or remove older GitHub Plus copies to avoid two versions modifying GitHub simultaneously.
 
 ## Configuration
 
