@@ -1,0 +1,66 @@
+name: Publish GitHub Plus v0.7.3 Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/publish-v0.7.3-release.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify userscript checksum
+        shell: bash
+        run: sha256sum --check --strict SHA256SUMS.txt
+
+      - name: Validate JavaScript syntax
+        run: node --check GitHub-Plus.user.js
+
+      - name: Build release ZIP
+        shell: bash
+        run: |
+          zip -9 GitHubPlus-Maintained-v0.7.3.zip \
+            GitHub-Plus.user.js \
+            README.md \
+            CHANGELOG.md \
+            RELEASE_NOTES_v0.7.3.md \
+            NOTICE.md \
+            LICENSE \
+            SECURITY.md \
+            CONTRIBUTING.md \
+            SHA256SUMS.txt
+          sha256sum GitHubPlus-Maintained-v0.7.3.zip > RELEASE_ASSETS_SHA256.txt
+
+      - name: Publish private release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view v0.7.3 >/dev/null 2>&1; then
+            gh release edit v0.7.3 \
+              --title "GitHub Plus Maintained v0.7.3" \
+              --notes-file RELEASE_NOTES_v0.7.3.md
+            gh release upload v0.7.3 \
+              GitHub-Plus.user.js \
+              GitHubPlus-Maintained-v0.7.3.zip \
+              SHA256SUMS.txt \
+              RELEASE_ASSETS_SHA256.txt \
+              --clobber
+          else
+            gh release create v0.7.3 \
+              --target main \
+              --title "GitHub Plus Maintained v0.7.3" \
+              --notes-file RELEASE_NOTES_v0.7.3.md \
+              GitHub-Plus.user.js \
+              GitHubPlus-Maintained-v0.7.3.zip \
+              SHA256SUMS.txt \
+              RELEASE_ASSETS_SHA256.txt
+          fi
