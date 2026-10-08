@@ -1,0 +1,65 @@
+name: Assemble repaired userscript
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.build/source.part*.b64'
+      - '.github/workflows/assemble-userscript.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Detect temporary payload
+        id: payload
+        shell: bash
+        run: |
+          if [[ -f .build/source.part01.b64 ]]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Reconstruct userscript
+        if: steps.payload.outputs.exists == 'true'
+        shell: bash
+        run: |
+          cat .build/source.part*.b64 | base64 --decode | gzip --decompress > GitHub-Plus.user.js
+
+      - name: Verify exact source hash
+        if: steps.payload.outputs.exists == 'true'
+        shell: bash
+        run: |
+          echo "3d563bfaef9e74736cc17aef8cc1b40ee2d5d94a727043ea2e4cf8ce01b8c7f1  GitHub-Plus.user.js" | sha256sum --check --strict
+
+      - name: Validate JavaScript syntax
+        if: steps.payload.outputs.exists == 'true'
+        run: node --check GitHub-Plus.user.js
+
+      - name: Write source checksum
+        if: steps.payload.outputs.exists == 'true'
+        shell: bash
+        run: sha256sum GitHub-Plus.user.js > SHA256SUMS.txt
+
+      - name: Remove temporary payload
+        if: steps.payload.outputs.exists == 'true'
+        shell: bash
+        run: rm -rf .build
+
+      - name: Commit verified userscript
+        if: steps.payload.outputs.exists == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add repaired GitHub Plus v0.7.1 source"
+          git push
