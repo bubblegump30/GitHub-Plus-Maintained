@@ -79,11 +79,15 @@ Do not publish or commit your token.
 
 ## Upstream
 
+Original author: **PRO-2684**
+
 Original Greasy Fork listing:
 
 https://greasyfork.org/en/scripts/510742-github-plus
 
-Original author: **PRO-2684**
+Original author's current Codeberg home:
+
+https://codeberg.org/PRO-2684
 
 ## Maintenance
 
