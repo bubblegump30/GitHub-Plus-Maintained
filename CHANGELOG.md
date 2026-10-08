@@ -2,6 +2,19 @@
 
 All notable changes to this maintained fork are documented here.
 
+## [0.7.2] - 2026-10-08
+
+### Fixed
+
+- Fixed GitHub repository pages getting stuck with gray loading placeholders while the userscript was enabled.
+- Removed the Tracking Prevention behavior that made GitHub's global `window.fetch` non-writable. Current GitHub relies on `fetch` for React and lazy-loaded repository content, so locking it could break sidebar and repository metadata rendering.
+- Restricted the release-asset enhancement hook so it only processes actual `/releases/expanded_assets/` fragments instead of broadly touching unrelated lazy-loaded GitHub fragments.
+
+### Reliability
+
+- Preserves GitHub's native request pipeline while keeping the rest of the userscript functionality intact.
+- Verified with `node --check` and exact SHA-256 validation before committing the source.
+
 ## [0.7.1] - 2026-10-08
 
 ### Fixed
