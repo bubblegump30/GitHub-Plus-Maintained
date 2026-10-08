@@ -2,8 +2,8 @@
 // @name         GitHub Plus
 // @name:zh-CN   GitHub 增强
 // @namespace    http://tampermonkey.net/
-// @version      0.7.1
-// @description  Enhance GitHub with additional features. Repaired build with self-contained dependencies.
+// @version      0.7.2
+// @description  Enhance GitHub with additional features. Repaired build with self-contained dependencies and current GitHub compatibility fixes.
 // @description:zh-CN 为 GitHub 增加额外的功能。修复版，已移除失效的外部依赖。
 // @author       PRO-2684
 // @contributor  KyleAustin85
@@ -1644,9 +1644,15 @@
      */
     function onFragmentReplace(event) {
         const self = event.target;
-        const src = self?.src;
+        const src = self?.src || self?.getAttribute?.("src");
         if (!src) return;
-        const match = expandedAssetsRegex.exec(src);
+        let normalizedSrc;
+        try {
+            normalizedSrc = new URL(src, location.href).href;
+        } catch {
+            return;
+        }
+        const match = expandedAssetsRegex.exec(normalizedSrc);
         if (!match) return;
         const [, owner, repo, version] = match;
         const info = { owner, repo, version };
@@ -1670,7 +1676,7 @@
             return; // No need to run
         // IncludeFragmentElement: https://github.com/github/include-fragment-element/blob/main/src/include-fragment-element.ts
         const fragments = document.querySelectorAll(
-            '[data-hpc] details[data-view-component="true"] include-fragment',
+            '[data-hpc] details[data-view-component="true"] include-fragment[src*="/releases/expanded_assets/"]',
         );
         fragments.forEach((fragment) => {
             if (!fragment.hasAttribute("data-ghp-listening")) {
@@ -1907,22 +1913,12 @@
         }
     }
     function preventFetchPatching() {
-        try {
-            const descriptor = Object.getOwnPropertyDescriptor(unsafeWindow, "fetch");
-            if (descriptor?.configurable === false) {
-                warn("window.fetch is not configurable; skipping fetch protection");
-                return;
-            }
-            Object.defineProperty(unsafeWindow, "fetch", {
-                configurable: descriptor?.configurable ?? true,
-                enumerable: descriptor?.enumerable ?? true,
-                value: unsafeWindow.fetch,
-                writable: false,
-            });
-            log("Protected window.fetch from replacement");
-        } catch (error) {
-            warn("Unable to protect window.fetch:", error);
-        }
+        // GitHub's current frontend may wrap/replace window.fetch while bootstrapping
+        // React and lazy-loaded repository data. Making the property non-writable can
+        // leave repository pages stuck on skeleton placeholders. Tracking Prevention
+        // therefore limits itself to clearing the tracking metadata above and never
+        // mutates the global fetch property.
+        log("Fetch protection skipped for GitHub compatibility");
     }
     function showRateLimit() {
         const resetDate = new Date(rateLimit.reset * 1000).toLocaleString();
